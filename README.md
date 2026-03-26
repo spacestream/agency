@@ -26,7 +26,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 # Or use OpenAI
 PROVIDER=openai
 OPENAI_API_KEY=sk-...
-OPENAI_MODEL=gpt-4o
+OPENAI_MODEL=gpt-5.2
 ```
 
 ## Run
