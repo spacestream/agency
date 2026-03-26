@@ -98,6 +98,8 @@ wss.on("connection", (ws) => {
 
 const PROVIDER = (process.env.PROVIDER || "anthropic").toLowerCase();
 
+await mkdir(PROJECT_DIR, { recursive: true });
+
 server.listen(PORT, () => {
   console.log(`Agency running at http://localhost:${PORT}`);
   console.log(`Provider: ${PROVIDER}`);
