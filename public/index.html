@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agency - Coding Agent</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Agency</h1>
+      <span id="status" class="status disconnected">Disconnected</span>
+    </header>
+
+    <div id="project-prompt">
+      <label for="project-name">Project folder name (new or existing):</label>
+      <input type="text" id="project-name" placeholder="my-cool-app" autocomplete="off" />
+      <button id="project-start" onclick="setProject()">Open</button>
+      <div id="project-error"></div>
+    </div>
+
+    <main id="messages"></main>
+
+    <footer id="chat-footer" style="display:none">
+      <textarea id="input" placeholder="Ask me to build something..." rows="2"></textarea>
+      <button id="send" onclick="sendMessage()">Send</button>
+    </footer>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

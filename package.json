@@ -1,0 +1,16 @@
+{
+  "name": "agency",
+  "version": "1.0.0",
+  "description": "A web-based coding agent powered by Claude",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "dotenv": "^16.4.0",
+    "express": "^4.21.0",
+    "openai": "^4.78.0",
+    "ws": "^8.18.0"
+  }
+}
