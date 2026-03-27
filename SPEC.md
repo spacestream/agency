@@ -35,8 +35,9 @@ Browser (public/)            Server (Node.js)            AI Provider
 
 | File | Role |
 |---|---|
-| `server.js` | Express static server + WebSocket handler. Manages per-connection conversation state and the approval Promise. Routes `chat`, `approval`, and `set_project` messages. |
-| `agent.js` | Provider-agnostic agent loop. Calls the AI model, processes tool-use responses, and repeats until the model stops requesting tools. Contains provider-specific call functions (`callAnthropic`, `callOpenAI`) and message format converters. |
+| `server.js` | Express static server + WebSocket handler. Manages per-connection conversation state and the approval Promise. Routes `chat`, `approval`, and `set_project` messages. Runs OAuth flow at startup when configured. |
+| `agent.js` | Provider-agnostic agent loop. Calls the AI model, processes tool-use responses, and repeats until the model stops requesting tools. Contains provider-specific call functions (`callAnthropic`, `callOpenAI`, `callCodex`) and message format converters. |
+| `oauth.js` | OpenAI Codex OAuth flow (Authorization Code + PKCE). Opens a browser for ChatGPT sign-in, exchanges the code for tokens via `auth.openai.com`, extracts the account ID from the JWT, and auto-refreshes tokens before expiry. |
 | `tools.js` | Tool definitions (Anthropic schema format) and execution logic. Seven tools: `read_file`, `write_file`, `delete_file`, `list_files`, `search_files`, `execute_command`, `write_spec`. All file paths validated by `safePath()`. |
 | `public/index.html` | Single-page shell: header with status badge, project name prompt, message list, chat input. |
 | `public/app.js` | WebSocket client. Renders chat bubbles, tool activity (collapsible `<details>`), approval cards, and error messages. Sends `chat`, `approval`, and `set_project` messages to server. |
@@ -58,7 +59,11 @@ All conversation messages are stored in Anthropic's block format (arrays of `tex
 
 ### Provider abstraction
 
-`callAnthropic()` and `callOpenAI()` both return `{ content, stopReason }` where `stopReason` is one of `"tool_use"`, `"end_turn"`, or `"length"`. The agent loop switches provider once at the start based on the `PROVIDER` env var. Adding a new provider means writing one call function and one message converter.
+`callAnthropic()`, `callOpenAI()`, and `callCodex()` all return `{ content, stopReason }` where `stopReason` is one of `"tool_use"`, `"end_turn"`, or `"length"`. The agent loop switches provider once at the start based on the `PROVIDER` and `OPENAI_AUTH` env vars. Adding a new provider means writing one call function and one message converter.
+
+### ChatGPT OAuth (Codex)
+
+When `OPENAI_AUTH=oauth`, the server runs an OAuth 2.0 Authorization Code + PKCE flow at startup against `auth.openai.com` (OpenAI's Auth0 provider). This uses the same client ID as the Codex CLI. The resulting access token is sent to `chatgpt.com/backend-api/codex/responses` (the Responses API), which uses the ChatGPT subscription instead of API credits. Tokens auto-refresh before expiry.
 
 ### Approval flow
 
@@ -110,8 +115,9 @@ All configuration is via environment variables (`.env` file):
 |---|---|---|
 | `PROVIDER` | `anthropic` | Which AI provider to use (`anthropic` or `openai`) |
 | `ANTHROPIC_API_KEY` | — | API key for Anthropic |
-| `OPENAI_API_KEY` | — | API key for OpenAI |
-| `OPENAI_MODEL` | `gpt-4o` | OpenAI model identifier |
+| `OPENAI_API_KEY` | — | API key for OpenAI (when `OPENAI_AUTH=apikey`) |
+| `OPENAI_AUTH` | `apikey` | OpenAI auth method: `apikey` or `oauth` (browser-based ChatGPT login) |
+| `OPENAI_MODEL` | `gpt-4o` | OpenAI model identifier (e.g. `gpt-5.2-codex` for OAuth) |
 | `PROJECT_DIR` | `./projects` | Root directory for all project folders |
 | `PORT` | `3000` | Server port |
 

@@ -23,11 +23,18 @@ Edit `.env` and set your provider and key:
 PROVIDER=anthropic
 ANTHROPIC_API_KEY=sk-ant-...
 
-# Or use OpenAI
+# Or use OpenAI with an API key
 PROVIDER=openai
 OPENAI_API_KEY=sk-...
-OPENAI_MODEL=gpt-5.2
+OPENAI_MODEL=gpt-4o
+
+# Or use OpenAI with ChatGPT subscription (OAuth)
+PROVIDER=openai
+OPENAI_AUTH=oauth
+OPENAI_MODEL=gpt-5.2-codex
 ```
+
+When using `OPENAI_AUTH=oauth`, the server will open a browser for ChatGPT sign-in on startup. This uses your ChatGPT subscription (Plus/Pro/Team) instead of API credits. No API key needed.
 
 ## Run
 
