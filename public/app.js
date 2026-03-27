@@ -18,6 +18,7 @@ let ws;
 let inputEnabled = true;
 let projectSet = false;
 let currentMode = "plan";
+let currentProjectName = null;
 let pendingImages = []; // { data: base64, mimeType: string }
 let existingProjects = [];
 
@@ -69,9 +70,16 @@ function handleMessage(msg) {
       break;
     case "project_set":
       projectSet = true;
+      currentProjectName = msg.name;
       projectPromptEl.style.display = "none";
       chatFooterEl.style.display = "";
       newProjectBtn.style.display = "";
+      document.getElementById("spec-btn").style.display = "";
+      document.getElementById("m-spec-btn").style.display = "";
+      document.getElementById("m-new-project-btn").style.display = "";
+      const label = document.getElementById("project-label");
+      label.textContent = msg.name;
+      label.style.display = "";
       updateModeUI(msg.mode || "plan");
       inputEl.focus();
       if (msg.existing && msg.hasSpec) {
@@ -360,7 +368,70 @@ inputEl.addEventListener("keydown", (e) => {
   }
 });
 
-// Modal
+// Mobile menu
+function toggleMenu() {
+  document.getElementById("mobile-menu").classList.toggle("open");
+}
+
+// Spec viewer
+async function showSpec() {
+  const modal = document.getElementById("spec-modal");
+  const contentEl = document.getElementById("spec-content");
+  contentEl.innerHTML = "<p>Loading...</p>";
+  modal.style.display = "flex";
+
+  try {
+    const res = await fetch(`/api/spec?project=${encodeURIComponent(currentProjectName)}`);
+    const data = await res.json();
+    if (!data.content) {
+      contentEl.innerHTML = "<p>No SPEC.md found in this project.</p>";
+      return;
+    }
+    contentEl.innerHTML = renderMarkdown(data.content);
+  } catch {
+    contentEl.innerHTML = "<p>Failed to load SPEC.md</p>";
+  }
+}
+
+function dismissSpec() {
+  document.getElementById("spec-modal").style.display = "none";
+}
+
+function renderMarkdown(md) {
+  return md
+    // Code blocks
+    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+    // Tables
+    .replace(/^(\|.+\|)\n(\|[-| :]+\|)\n((?:\|.+\|\n?)*)/gm, (_, header, sep, body) => {
+      const ths = header.split("|").filter(c => c.trim()).map(c => `<th>${c.trim()}</th>`).join("");
+      const rows = body.trim().split("\n").map(row => {
+        const tds = row.split("|").filter(c => c.trim()).map(c => `<td>${c.trim()}</td>`).join("");
+        return `<tr>${tds}</tr>`;
+      }).join("");
+      return `<table><thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table>`;
+    })
+    // Headers
+    .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    // Bold and italic
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    // Inline code
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    // Unordered lists
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+    // Ordered lists
+    .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+    // Paragraphs (lines not already wrapped)
+    .replace(/^(?!<[hupltd]|$)(.+)$/gm, '<p>$1</p>')
+    // Clean up extra whitespace
+    .replace(/\n{2,}/g, '\n');
+}
+
+// Plan-first modal
 function showModal() {
   document.getElementById("plan-modal").style.display = "flex";
 }
@@ -466,10 +537,15 @@ function resetProject() {
   projectNameEl.disabled = false;
   projectStartBtn.disabled = false;
   projectErrorEl.textContent = "";
-  // Show project prompt, hide chat footer and button
+  // Show project prompt, hide chat footer and buttons
   projectPromptEl.style.display = "";
   chatFooterEl.style.display = "none";
   newProjectBtn.style.display = "none";
+  document.getElementById("spec-btn").style.display = "none";
+  document.getElementById("m-spec-btn").style.display = "none";
+  document.getElementById("m-new-project-btn").style.display = "none";
+  document.getElementById("project-label").style.display = "none";
+  currentProjectName = null;
   // Reset to plan mode
   updateModeUI("plan");
   // Reconnect to get a fresh server-side session

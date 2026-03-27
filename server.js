@@ -49,6 +49,23 @@ if (NEEDS_OAUTH) {
   });
 }
 
+// Read SPEC.md from a project
+app.get("/api/spec", async (req, res) => {
+  const name = req.query.project;
+  if (!name || !/^[a-zA-Z0-9_-]+$/.test(name)) {
+    res.status(400).json({ error: "Invalid project name" });
+    return;
+  }
+  try {
+    const { readFile } = await import("fs/promises");
+    const specPath = join(resolve(PROJECT_DIR, name), "SPEC.md");
+    const content = await readFile(specPath, "utf8");
+    res.json({ content });
+  } catch {
+    res.json({ content: null });
+  }
+});
+
 // List existing project folders
 app.get("/api/projects", async (req, res) => {
   try {
