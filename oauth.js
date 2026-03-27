@@ -1,6 +1,6 @@
 import { randomBytes, createHash } from "node:crypto";
 import { createServer } from "node:http";
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { readFile, writeFile, mkdir, unlink } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 
 const CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann";
@@ -19,6 +19,13 @@ let _refreshTokenValue = null;
 export function getAccessToken() { return _accessToken; }
 export function getAccountId() { return _accountId; }
 export function isAuthenticated() { return _accessToken !== null; }
+
+export async function logout() {
+  _accessToken = null;
+  _accountId = null;
+  _refreshTokenValue = null;
+  try { await unlink(TOKEN_FILE); } catch {}
+}
 
 function base64url(buffer) {
   return buffer.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");

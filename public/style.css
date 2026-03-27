@@ -169,6 +169,17 @@ header h1 {
   border-color: var(--text-dim);
 }
 
+.header-btn-dim {
+  color: var(--text-muted);
+  border-color: var(--border);
+  text-decoration: none;
+}
+
+.header-btn-dim:hover {
+  color: var(--red);
+  border-color: var(--red-dim);
+}
+
 .telemetry-block {
   display: flex;
   align-items: center;

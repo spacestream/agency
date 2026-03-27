@@ -8,7 +8,7 @@ import { mkdir } from "fs/promises";
 import "dotenv/config";
 
 import { runAgentLoop } from "./agent.js";
-import { startAuthFlow, isAuthenticated, tryRestoreSession } from "./oauth.js";
+import { startAuthFlow, isAuthenticated, tryRestoreSession, logout } from "./oauth.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -26,6 +26,17 @@ if (NEEDS_OAUTH) {
   app.get("/auth/start", (req, res) => {
     const url = startAuthFlow(PORT);
     res.redirect(url);
+  });
+
+  // Logout — clear tokens and redirect to login
+  app.get("/auth/logout", (req, res) => {
+    logout().then(() => {
+      console.log("OAuth session cleared.");
+      res.redirect("/");
+    }).catch((err) => {
+      console.error("Logout error:", err.message);
+      res.redirect("/");
+    });
   });
 
   // Gate: serve login page if not authenticated
