@@ -308,8 +308,13 @@ header h1 {
   50%      { opacity: 0; }
 }
 
-#project-prompt input {
+.project-input-wrap {
   flex: 1;
+  position: relative;
+}
+
+#project-prompt input {
+  width: 100%;
   background: var(--bg);
   border: 1px solid var(--border);
   color: var(--text);
@@ -330,6 +335,38 @@ header h1 {
   outline: none;
   border-color: var(--green-dim);
   box-shadow: 0 0 0 1px rgba(0, 255, 136, 0.1);
+}
+
+.project-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  margin-top: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.dropdown-item {
+  padding: 8px 14px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.dropdown-item:hover {
+  background: var(--green-bg);
+  color: var(--green);
+}
+
+.dropdown-item + .dropdown-item {
+  border-top: 1px solid var(--border);
 }
 
 #project-prompt button {
@@ -788,6 +825,46 @@ footer {
   margin-bottom: 8px;
 }
 
+/* ---- Mode Toggle ---- */
+
+.mode-toggle {
+  display: flex;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.mode-btn {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  padding: 4px 14px;
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.mode-btn + .mode-btn {
+  border-left: 1px solid var(--border-light);
+}
+
+.mode-btn:hover {
+  color: var(--text);
+}
+
+.mode-btn.active[data-mode="plan"] {
+  background: var(--amber-bg);
+  color: var(--amber);
+}
+
+.mode-btn.active[data-mode="code"] {
+  background: var(--green-bg);
+  color: var(--green);
+}
+
 .input-label {
   font-family: var(--mono);
   font-size: 9px;
@@ -879,6 +956,121 @@ footer button:disabled {
 
 footer button:disabled svg {
   opacity: 0.3;
+}
+
+/* ---- Modal ---- */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 32px;
+  max-width: 440px;
+  width: 90%;
+  animation: modalSlideIn 0.25s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--amber);
+  margin-bottom: 12px;
+}
+
+.modal h2 {
+  font-family: var(--sans);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.modal p {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.7;
+  margin-bottom: 8px;
+}
+
+.modal p strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.modal-steps {
+  margin: 18px 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.modal-step-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--amber);
+  background: var(--amber-bg);
+  border: 1px solid rgba(255, 184, 0, 0.12);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.modal-dismiss {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: var(--amber);
+  border: 1px solid var(--amber-dim);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  transition: all 0.15s;
+}
+
+.modal-dismiss:hover {
+  background: var(--amber-bg);
+  box-shadow: 0 0 12px rgba(255, 184, 0, 0.1);
 }
 
 /* ---- Selection ---- */

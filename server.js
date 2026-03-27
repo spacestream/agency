@@ -49,6 +49,18 @@ if (NEEDS_OAUTH) {
   });
 }
 
+// List existing project folders
+app.get("/api/projects", async (req, res) => {
+  try {
+    const { readdir } = await import("fs/promises");
+    const entries = await readdir(PROJECT_DIR, { withFileTypes: true });
+    const dirs = entries.filter((e) => e.isDirectory()).map((e) => e.name).sort();
+    res.json(dirs);
+  } catch {
+    res.json([]);
+  }
+});
+
 app.use(express.static(join(__dirname, "public")));
 
 const server = createServer(app);
@@ -60,6 +72,7 @@ wss.on("connection", (ws) => {
   const conversationMessages = [];
   let pendingApproval = null;
   let sessionProjectDir = null;
+  let sessionMode = "plan";
 
   function send(msg) {
     if (ws.readyState === ws.OPEN) {
@@ -94,8 +107,26 @@ wss.on("connection", (ws) => {
       const isExisting = existsSync(target);
       await mkdir(target, { recursive: true });
       sessionProjectDir = target;
-      console.log(`Project directory set: ${target}`);
-      send({ type: "project_set", name, existing: isExisting });
+      const specPath = join(target, "SPEC.md");
+      const hasSpec = existsSync(specPath);
+      console.log(`SPEC.md check: ${specPath} → ${hasSpec}`);
+      sessionMode = hasSpec ? "code" : "plan";
+      console.log(`Project directory set: ${target} (mode: ${sessionMode})`);
+      send({ type: "project_set", name, existing: isExisting, mode: sessionMode, hasSpec });
+      return;
+    }
+
+    if (msg.type === "set_mode" && (msg.mode === "plan" || msg.mode === "code")) {
+      if (msg.mode === "code") {
+        const hasSpec = sessionProjectDir && existsSync(join(sessionProjectDir, "SPEC.md"));
+        if (!hasSpec) {
+          send({ type: "mode_denied", reason: "no_spec" });
+          return;
+        }
+      }
+      sessionMode = msg.mode;
+      console.log(`Mode switched to: ${sessionMode}`);
+      send({ type: "mode_set", mode: sessionMode });
       return;
     }
 
@@ -108,7 +139,7 @@ wss.on("connection", (ws) => {
       send({ type: "status", status: "thinking" });
 
       try {
-        await runAgentLoop(msg.content, msg.images || [], conversationMessages, sessionProjectDir, {
+        await runAgentLoop(msg.content, msg.images || [], conversationMessages, sessionProjectDir, sessionMode, {
           onText: (text) => send({ type: "assistant", content: text }),
           onToolCall: (tool, input) => send({ type: "tool_call", tool, input }),
           onToolResult: (tool, result) => send({ type: "tool_result", tool, result }),

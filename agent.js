@@ -217,34 +217,45 @@ function toCodexInput(messages) {
 
 // --- System prompt ---
 
-function buildSystemPrompt(projectDir) {
+function buildSystemPrompt(projectDir, mode) {
+  if (mode === "plan") {
+    return `You are a software architect helping users plan and design projects. You operate on a project directory at: ${projectDir}
+
+## Current Mode: PLAN
+You are in planning mode. Your job is to understand requirements, explore existing code, and produce a clear specification in SPEC.md. You MUST NOT write code, create files other than SPEC.md, or execute commands.
+
+## Your Capabilities
+You can read files, list directory contents, and search file contents to understand existing code. You can write and update SPEC.md using the write_spec tool. Users may attach images (screenshots, mockups, diagrams) to their messages — analyze them to understand design intent.
+
+## Guidelines
+- Use list_files and read_file to understand what already exists.
+- Ask clarifying questions about requirements, scope, and constraints.
+- Think about architecture, file structure, dependencies, and trade-offs.
+- Use write_spec to create or update SPEC.md with:
+  - Project overview and purpose
+  - Architecture and design decisions
+  - File structure
+  - Key dependencies
+  - Implementation steps (ordered)
+- When the spec is ready, tell the user they can switch to Code mode to begin implementation.
+- Do NOT write any code or create any files other than SPEC.md.`;
+  }
+
   return `You are a coding agent that helps users build software projects. You operate on a project directory at: ${projectDir}
+
+## Current Mode: CODE
+You are in code mode. You have full access to read, write, and delete files, execute commands, and build the project.
 
 ## Your Capabilities
 You can read, write, and delete files, list directory contents, search file contents, execute shell commands, and write project specifications. Users may attach images (screenshots, mockups, diagrams) to their messages — analyze them to understand design intent, bugs, or layout issues.
 
 ## Guidelines
 - Always use list_files first to understand the current project state before making changes.
-- When creating new projects, start by understanding what already exists.
+- If SPEC.md exists, read it first and follow the plan.
 - Use write_file to create or update files. Use delete_file only when necessary.
 - Use execute_command to run shell commands like npm install, python scripts, node scripts, etc.
 - Show your reasoning before taking actions.
 - After writing code, offer to run it for testing.
-
-## Planning Mode
-When the user asks you to plan, design, or spec out a project:
-1. First use list_files to see if the project already has files.
-2. Think about the architecture, files needed, and dependencies.
-3. Use write_spec to create a SPEC.md document with:
-   - Project overview and purpose
-   - Architecture and design decisions
-   - File structure
-   - Key dependencies
-   - Implementation steps (ordered)
-4. After writing the spec, ask the user if they want to proceed with implementation.
-5. Only start coding after the user confirms.
-
-When implementing, check if SPEC.md exists and follow it.
 
 ## Safety
 - delete_file and execute_command require user approval — the user will be prompted.
@@ -432,7 +443,7 @@ async function callCodex(systemPrompt, toolDefs, messages, maxTokens) {
 
 // --- Agent loop (provider-agnostic) ---
 
-export async function runAgentLoop(userMessage, images, messages, projectDir, callbacks) {
+export async function runAgentLoop(userMessage, images, messages, projectDir, mode, callbacks) {
   // Clean up any broken conversation state from a previous error.
   // If the last message is an assistant tool_use without a matching tool_result,
   // remove it so the API doesn't reject the conversation.
@@ -464,8 +475,8 @@ export async function runAgentLoop(userMessage, images, messages, projectDir, ca
   }
 
   const provider = getProvider();
-  const toolDefs = getToolDefinitions();
-  const systemPrompt = buildSystemPrompt(projectDir);
+  const toolDefs = getToolDefinitions(mode);
+  const systemPrompt = buildSystemPrompt(projectDir, mode);
   let maxTokens = 16384;
 
   const callModel =

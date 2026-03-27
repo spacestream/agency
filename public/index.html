@@ -45,7 +45,10 @@
       </div>
       <div class="prompt-row">
         <span class="prompt-caret">&gt;</span>
-        <input type="text" id="project-name" placeholder="project-identifier" autocomplete="off" spellcheck="false" />
+        <div class="project-input-wrap">
+          <input type="text" id="project-name" placeholder="project-identifier" autocomplete="off" spellcheck="false" />
+          <div id="project-dropdown" class="project-dropdown" style="display:none"></div>
+        </div>
         <button id="project-start" onclick="setProject()">LAUNCH</button>
       </div>
       <div id="project-error"></div>
@@ -55,7 +58,11 @@
 
     <footer id="chat-footer" style="display:none">
       <div class="input-chrome">
-        <span class="input-label">OPERATOR INPUT</span>
+        <div class="mode-toggle" id="mode-toggle">
+          <button class="mode-btn active" data-mode="plan" onclick="setMode('plan')">PLAN</button>
+          <button class="mode-btn" data-mode="code" onclick="setMode('code')">CODE</button>
+        </div>
+        <span class="input-label" id="mode-hint">SPEC.md only</span>
         <span class="input-indicator"></span>
       </div>
       <div id="image-preview" class="image-preview"></div>
@@ -77,6 +84,21 @@
         </button>
       </div>
     </footer>
+  </div>
+
+  <div id="plan-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)dismissModal()">
+    <div class="modal">
+      <div class="modal-label">PLAN FIRST</div>
+      <h2>Create a spec before coding</h2>
+      <p>Agency works best when you plan before you build. Describe what you want to create and the agent will produce a <strong>SPEC.md</strong> covering architecture, file structure, dependencies, and implementation steps.</p>
+      <p>Once the spec is ready, Code mode will unlock automatically.</p>
+      <div class="modal-steps">
+        <div class="modal-step"><span class="modal-step-num">1</span><span>Describe your project in the chat</span></div>
+        <div class="modal-step"><span class="modal-step-num">2</span><span>Review and refine the generated SPEC.md</span></div>
+        <div class="modal-step"><span class="modal-step-num">3</span><span>Switch to Code mode to start building</span></div>
+      </div>
+      <button class="modal-dismiss" onclick="dismissModal()">GOT IT</button>
+    </div>
   </div>
 
   <script src="app.js"></script>

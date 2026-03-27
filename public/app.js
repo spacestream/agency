@@ -10,11 +10,16 @@ const chatFooterEl = document.getElementById("chat-footer");
 const newProjectBtn = document.getElementById("new-project-btn");
 const fileInputEl = document.getElementById("file-input");
 const imagePreviewEl = document.getElementById("image-preview");
+const modeToggleEl = document.getElementById("mode-toggle");
+const modeHintEl = document.getElementById("mode-hint");
+const projectDropdown = document.getElementById("project-dropdown");
 
 let ws;
 let inputEnabled = true;
 let projectSet = false;
+let currentMode = "plan";
 let pendingImages = []; // { data: base64, mimeType: string }
+let existingProjects = [];
 
 function connect() {
   ws = new WebSocket(`ws://${location.host}`);
@@ -67,17 +72,29 @@ function handleMessage(msg) {
       projectPromptEl.style.display = "none";
       chatFooterEl.style.display = "";
       newProjectBtn.style.display = "";
+      updateModeUI(msg.mode || "plan");
       inputEl.focus();
-      if (msg.existing) {
-        appendAssistant(`Opened existing project: ${msg.name} — You can ask me to work on the existing files, add features, fix bugs, or continue building.`);
+      if (msg.existing && msg.hasSpec) {
+        appendAssistant(`Opened existing project: ${msg.name} — SPEC.md found, switching to Code mode. You can ask me to work on the existing files, add features, fix bugs, or continue building.`);
+      } else if (msg.existing) {
+        appendAssistant(`Opened existing project: ${msg.name} — No SPEC.md found. Starting in Plan mode — describe what you want to build and I'll create a spec.`);
       } else {
-        appendAssistant(`Created new project: ${msg.name}`);
+        appendAssistant(`Created new project: ${msg.name} — Starting in Plan mode. Describe what you want to build and I'll create a specification before writing any code.`);
       }
       break;
     case "project_error":
       projectErrorEl.textContent = msg.error;
       projectStartBtn.disabled = false;
       projectNameEl.disabled = false;
+      break;
+    case "mode_set":
+      updateModeUI(msg.mode);
+      appendAssistant(msg.mode === "code"
+        ? "Switched to Code mode — I now have full access to create files, write code, and run commands."
+        : "Switched to Plan mode — I'll focus on understanding requirements and updating SPEC.md.");
+      break;
+    case "mode_denied":
+      showModal();
       break;
     case "error":
       appendError(msg.content);
@@ -261,13 +278,77 @@ function setProject() {
   projectErrorEl.textContent = "";
   projectStartBtn.disabled = true;
   projectNameEl.disabled = true;
+  hideDropdown();
   ws.send(JSON.stringify({ type: "set_project", name }));
 }
+
+// Project autocomplete
+async function fetchProjects() {
+  try {
+    const res = await fetch("/api/projects");
+    existingProjects = await res.json();
+  } catch {
+    existingProjects = [];
+  }
+}
+
+function showDropdown(filter) {
+  const matches = existingProjects.filter((p) =>
+    p.toLowerCase().includes(filter.toLowerCase())
+  );
+  if (matches.length === 0 || (matches.length === 1 && matches[0] === filter)) {
+    hideDropdown();
+    return;
+  }
+  projectDropdown.innerHTML = "";
+  for (const name of matches.slice(0, 8)) {
+    const item = document.createElement("div");
+    item.className = "dropdown-item";
+    item.textContent = name;
+    item.onclick = () => {
+      projectNameEl.value = name;
+      hideDropdown();
+      projectNameEl.focus();
+    };
+    projectDropdown.appendChild(item);
+  }
+  projectDropdown.style.display = "block";
+}
+
+function hideDropdown() {
+  projectDropdown.style.display = "none";
+}
+
+projectNameEl.addEventListener("input", () => {
+  const val = projectNameEl.value.trim();
+  if (val.length > 0) {
+    showDropdown(val);
+  } else {
+    hideDropdown();
+  }
+});
+
+projectNameEl.addEventListener("focus", () => {
+  fetchProjects().then(() => {
+    const val = projectNameEl.value.trim();
+    if (val.length > 0) showDropdown(val);
+    else if (existingProjects.length > 0) showDropdown("");
+  });
+});
+
+projectNameEl.addEventListener("blur", () => {
+  // Delay to allow click on dropdown item
+  setTimeout(hideDropdown, 150);
+});
 
 projectNameEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     e.preventDefault();
+    hideDropdown();
     setProject();
+  }
+  if (e.key === "Escape") {
+    hideDropdown();
   }
 });
 
@@ -278,6 +359,28 @@ inputEl.addEventListener("keydown", (e) => {
     sendMessage();
   }
 });
+
+// Modal
+function showModal() {
+  document.getElementById("plan-modal").style.display = "flex";
+}
+function dismissModal() {
+  document.getElementById("plan-modal").style.display = "none";
+}
+
+// Mode switching
+function setMode(mode) {
+  ws.send(JSON.stringify({ type: "set_mode", mode }));
+}
+
+function updateModeUI(mode) {
+  currentMode = mode;
+  for (const btn of modeToggleEl.querySelectorAll(".mode-btn")) {
+    btn.classList.toggle("active", btn.dataset.mode === mode);
+  }
+  modeHintEl.textContent = mode === "plan" ? "SPEC.md only" : "All files";
+  document.body.setAttribute("data-mode", mode);
+}
 
 // Image attachment handling
 fileInputEl.addEventListener("change", () => {
@@ -367,6 +470,8 @@ function resetProject() {
   projectPromptEl.style.display = "";
   chatFooterEl.style.display = "none";
   newProjectBtn.style.display = "none";
+  // Reset to plan mode
+  updateModeUI("plan");
   // Reconnect to get a fresh server-side session
   ws.close();
 }

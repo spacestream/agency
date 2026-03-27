@@ -181,7 +181,12 @@ export const TOOLS = {
   },
 };
 
-export function getToolDefinitions() {
+const PLAN_TOOLS = ["read_file", "list_files", "search_files", "write_spec"];
+
+export function getToolDefinitions(mode = "code") {
+  if (mode === "plan") {
+    return PLAN_TOOLS.map((name) => TOOLS[name].definition);
+  }
   return Object.values(TOOLS).map((t) => t.definition);
 }
 
