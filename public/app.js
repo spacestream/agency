@@ -80,6 +80,9 @@ function handleMessage(msg) {
       const label = document.getElementById("project-label");
       label.textContent = msg.name;
       label.style.display = "";
+      refreshUsage();
+      if (usageInterval) clearInterval(usageInterval);
+      usageInterval = setInterval(refreshUsage, 60000);
       updateModeUI(msg.mode || "plan");
       inputEl.focus();
       if (msg.existing && msg.hasSpec) {
@@ -545,11 +548,50 @@ function resetProject() {
   document.getElementById("m-spec-btn").style.display = "none";
   document.getElementById("m-new-project-btn").style.display = "none";
   document.getElementById("project-label").style.display = "none";
+  document.getElementById("usage-block").style.display = "none";
+  if (usageInterval) { clearInterval(usageInterval); usageInterval = null; }
   currentProjectName = null;
   // Reset to plan mode
   updateModeUI("plan");
   // Reconnect to get a fresh server-side session
   ws.close();
 }
+
+// Usage display
+let oauthEnabled = null;
+
+async function refreshUsage() {
+  if (oauthEnabled === false) return;
+  if (oauthEnabled === null) {
+    try {
+      const cfg = await fetch("/api/config");
+      oauthEnabled = cfg.ok && (await cfg.json()).oauth === true;
+    } catch {
+      oauthEnabled = false;
+    }
+    if (!oauthEnabled) return;
+  }
+  try {
+    const res = await fetch("/api/usage");
+    const data = await res.json();
+    const block = document.getElementById("usage-block");
+    if (!data.windows || data.windows.length === 0) {
+      block.style.display = "none";
+      return;
+    }
+    block.style.display = "";
+    block.innerHTML = data.windows.map((w) => {
+      const pct = Math.round(w.usedPercent);
+      const color = pct > 80 ? "var(--red)" : pct > 50 ? "var(--amber)" : "var(--green)";
+      return `<div class="usage-item">
+        <span class="usage-label">${w.label}</span>
+        <div class="usage-bar"><div class="usage-fill" style="width:${pct}%;background:${color}"></div></div>
+        <span class="usage-pct">${pct}%</span>
+      </div>`;
+    }).join("");
+  } catch {}
+}
+
+let usageInterval = null;
 
 connect();

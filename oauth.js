@@ -20,6 +20,44 @@ export function getAccessToken() { return _accessToken; }
 export function getAccountId() { return _accountId; }
 export function isAuthenticated() { return _accessToken !== null; }
 
+export async function fetchUsage() {
+  if (!_accessToken || !_accountId) return null;
+  try {
+    const res = await fetch("https://chatgpt.com/backend-api/wham/usage", {
+      headers: {
+        "Authorization": `Bearer ${_accessToken}`,
+        "ChatGPT-Account-Id": _accountId,
+        "Accept": "application/json",
+      },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const windows = [];
+    if (data.rate_limit?.primary_window) {
+      const pw = data.rate_limit.primary_window;
+      const hours = Math.round((pw.limit_window_seconds || 10800) / 3600);
+      windows.push({
+        label: `${hours}h`,
+        usedPercent: Math.max(0, Math.min(100, pw.used_percent || 0)),
+        resetAt: pw.reset_at ? pw.reset_at * 1000 : undefined,
+      });
+    }
+    if (data.rate_limit?.secondary_window) {
+      const sw = data.rate_limit.secondary_window;
+      const hours = Math.round((sw.limit_window_seconds || 86400) / 3600);
+      const label = hours >= 168 ? "Week" : hours >= 24 ? "Day" : `${hours}h`;
+      windows.push({
+        label,
+        usedPercent: Math.max(0, Math.min(100, sw.used_percent || 0)),
+        resetAt: sw.reset_at ? sw.reset_at * 1000 : undefined,
+      });
+    }
+    return { plan: data.plan_type || null, windows };
+  } catch {
+    return null;
+  }
+}
+
 export async function logout() {
   _accessToken = null;
   _accountId = null;

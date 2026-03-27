@@ -8,7 +8,7 @@ import { mkdir } from "fs/promises";
 import "dotenv/config";
 
 import { runAgentLoop } from "./agent.js";
-import { startAuthFlow, isAuthenticated, tryRestoreSession, logout } from "./oauth.js";
+import { startAuthFlow, isAuthenticated, tryRestoreSession, logout, fetchUsage } from "./oauth.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -37,6 +37,17 @@ if (NEEDS_OAUTH) {
       console.error("Logout error:", err.message);
       res.redirect("/");
     });
+  });
+
+  // Client config — tells the frontend OAuth is active
+  app.get("/api/config", (req, res) => {
+    res.json({ oauth: true });
+  });
+
+  // ChatGPT subscription usage
+  app.get("/api/usage", async (req, res) => {
+    const usage = await fetchUsage();
+    res.json(usage || { windows: [] });
   });
 
   // Gate: serve login page if not authenticated
