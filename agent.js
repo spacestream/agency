@@ -79,12 +79,28 @@ function toOpenAIMessages(systemPrompt, messages) {
             });
           }
         } else {
-          // Plain text blocks
-          const text = msg.content
-            .filter((b) => b.type === "text")
-            .map((b) => b.text)
-            .join("\n");
-          out.push({ role: "user", content: text || "" });
+          // Text and/or image blocks
+          const hasImages = msg.content.some((b) => b.type === "image");
+          if (hasImages) {
+            const parts = [];
+            for (const b of msg.content) {
+              if (b.type === "text") {
+                parts.push({ type: "text", text: b.text });
+              } else if (b.type === "image") {
+                parts.push({
+                  type: "image_url",
+                  image_url: { url: `data:${b.source.media_type};base64,${b.source.data}` },
+                });
+              }
+            }
+            out.push({ role: "user", content: parts });
+          } else {
+            const text = msg.content
+              .filter((b) => b.type === "text")
+              .map((b) => b.text)
+              .join("\n");
+            out.push({ role: "user", content: text || "" });
+          }
         }
       }
     } else if (msg.role === "assistant") {
@@ -143,14 +159,20 @@ function toCodexInput(messages) {
             });
           }
         } else {
-          const text = msg.content
-            .filter((b) => b.type === "text")
-            .map((b) => b.text)
-            .join("\n");
-          input.push({
-            role: "user",
-            content: [{ type: "input_text", text: text || "" }],
-          });
+          const parts = [];
+          for (const b of msg.content) {
+            if (b.type === "text") {
+              parts.push({ type: "input_text", text: b.text });
+            } else if (b.type === "image") {
+              parts.push({
+                type: "input_image",
+                detail: "auto",
+                image_url: `data:${b.source.media_type};base64,${b.source.data}`,
+              });
+            }
+          }
+          if (parts.length === 0) parts.push({ type: "input_text", text: "" });
+          input.push({ role: "user", content: parts });
         }
       }
     } else if (msg.role === "assistant") {
@@ -199,7 +221,7 @@ function buildSystemPrompt(projectDir) {
   return `You are a coding agent that helps users build software projects. You operate on a project directory at: ${projectDir}
 
 ## Your Capabilities
-You can read, write, and delete files, list directory contents, search file contents, execute shell commands, and write project specifications.
+You can read, write, and delete files, list directory contents, search file contents, execute shell commands, and write project specifications. Users may attach images (screenshots, mockups, diagrams) to their messages — analyze them to understand design intent, bugs, or layout issues.
 
 ## Guidelines
 - Always use list_files first to understand the current project state before making changes.
@@ -338,6 +360,7 @@ async function callCodex(systemPrompt, toolDefs, messages, maxTokens) {
   const codexTools = toolDefsForCodex(toolDefs);
   const codexInput = toCodexInput(messages);
 
+
   const body = {
     model: OPENAI_MODEL,
     store: false,
@@ -409,7 +432,7 @@ async function callCodex(systemPrompt, toolDefs, messages, maxTokens) {
 
 // --- Agent loop (provider-agnostic) ---
 
-export async function runAgentLoop(userMessage, messages, projectDir, callbacks) {
+export async function runAgentLoop(userMessage, images, messages, projectDir, callbacks) {
   // Clean up any broken conversation state from a previous error.
   // If the last message is an assistant tool_use without a matching tool_result,
   // remove it so the API doesn't reject the conversation.
@@ -426,7 +449,19 @@ export async function runAgentLoop(userMessage, messages, projectDir, callbacks)
     }
   }
 
-  messages.push({ role: "user", content: userMessage });
+  // Build user message — plain text or multimodal with images
+  if (images && images.length > 0) {
+    const content = [{ type: "text", text: userMessage }];
+    for (const img of images) {
+      content.push({
+        type: "image",
+        source: { type: "base64", media_type: img.mimeType, data: img.data },
+      });
+    }
+    messages.push({ role: "user", content });
+  } else {
+    messages.push({ role: "user", content: userMessage });
+  }
 
   const provider = getProvider();
   const toolDefs = getToolDefinitions();

@@ -8,10 +8,13 @@ const projectStartBtn = document.getElementById("project-start");
 const projectErrorEl = document.getElementById("project-error");
 const chatFooterEl = document.getElementById("chat-footer");
 const newProjectBtn = document.getElementById("new-project-btn");
+const fileInputEl = document.getElementById("file-input");
+const imagePreviewEl = document.getElementById("image-preview");
 
 let ws;
 let inputEnabled = true;
 let projectSet = false;
+let pendingImages = []; // { data: base64, mimeType: string }
 
 function connect() {
   ws = new WebSocket(`ws://${location.host}`);
@@ -88,10 +91,25 @@ function setInputEnabled(enabled) {
   sendBtn.disabled = !enabled;
 }
 
-function appendUser(text) {
+function appendUser(text, images) {
   const el = document.createElement("div");
   el.className = "msg user";
-  el.textContent = text;
+  if (text) {
+    const textNode = document.createElement("div");
+    textNode.textContent = text;
+    el.appendChild(textNode);
+  }
+  if (images && images.length > 0) {
+    const strip = document.createElement("div");
+    strip.className = "msg-images";
+    for (const img of images) {
+      const thumb = document.createElement("img");
+      thumb.src = `data:${img.mimeType};base64,${img.data}`;
+      thumb.alt = "Attached image";
+      strip.appendChild(thumb);
+    }
+    el.appendChild(strip);
+  }
   messagesEl.appendChild(el);
   scrollToBottom();
 }
@@ -216,11 +234,21 @@ function toolInputSummary(tool, input) {
 
 function sendMessage() {
   const text = inputEl.value.trim();
-  if (!text || !inputEnabled) return;
+  if (!text && pendingImages.length === 0) return;
+  if (!inputEnabled) return;
 
-  appendUser(text);
-  ws.send(JSON.stringify({ type: "chat", content: text }));
+  appendUser(text, pendingImages);
+
+  const msg = { type: "chat", content: text || "(see attached images)" };
+  if (pendingImages.length > 0) {
+    msg.images = pendingImages;
+  }
+  ws.send(JSON.stringify(msg));
+
   inputEl.value = "";
+  pendingImages = [];
+  imagePreviewEl.innerHTML = "";
+  imagePreviewEl.style.display = "none";
 }
 
 function scrollToBottom() {
@@ -248,6 +276,81 @@ inputEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     sendMessage();
+  }
+});
+
+// Image attachment handling
+fileInputEl.addEventListener("change", () => {
+  for (const file of fileInputEl.files) {
+    if (!file.type.startsWith("image/")) continue;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result.split(",")[1];
+      pendingImages.push({ data: base64, mimeType: file.type });
+      renderImagePreview();
+    };
+    reader.readAsDataURL(file);
+  }
+  fileInputEl.value = "";
+});
+
+function renderImagePreview() {
+  imagePreviewEl.innerHTML = "";
+  if (pendingImages.length === 0) {
+    imagePreviewEl.style.display = "none";
+    return;
+  }
+  imagePreviewEl.style.display = "";
+  pendingImages.forEach((img, i) => {
+    const wrap = document.createElement("div");
+    wrap.className = "preview-thumb";
+    const thumb = document.createElement("img");
+    thumb.src = `data:${img.mimeType};base64,${img.data}`;
+    wrap.appendChild(thumb);
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "preview-remove";
+    removeBtn.textContent = "×";
+    removeBtn.onclick = () => {
+      pendingImages.splice(i, 1);
+      renderImagePreview();
+    };
+    wrap.appendChild(removeBtn);
+    imagePreviewEl.appendChild(wrap);
+  });
+}
+
+// Paste images from clipboard
+inputEl.addEventListener("paste", (e) => {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (const item of items) {
+    if (!item.type.startsWith("image/")) continue;
+    e.preventDefault();
+    const file = item.getAsFile();
+    const reader = new FileReader();
+    reader.onload = () => {
+      pendingImages.push({ data: reader.result.split(",")[1], mimeType: file.type });
+      renderImagePreview();
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+// Drag and drop images
+const dropZone = document.getElementById("chat-footer");
+dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("drag-over"); });
+dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
+dropZone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dropZone.classList.remove("drag-over");
+  for (const file of e.dataTransfer.files) {
+    if (!file.type.startsWith("image/")) continue;
+    const reader = new FileReader();
+    reader.onload = () => {
+      pendingImages.push({ data: reader.result.split(",")[1], mimeType: file.type });
+      renderImagePreview();
+    };
+    reader.readAsDataURL(file);
   }
 });
 

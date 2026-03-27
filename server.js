@@ -97,7 +97,7 @@ wss.on("connection", (ws) => {
       send({ type: "status", status: "thinking" });
 
       try {
-        await runAgentLoop(msg.content, conversationMessages, sessionProjectDir, {
+        await runAgentLoop(msg.content, msg.images || [], conversationMessages, sessionProjectDir, {
           onText: (text) => send({ type: "assistant", content: text }),
           onToolCall: (tool, input) => send({ type: "tool_call", tool, input }),
           onToolResult: (tool, result) => send({ type: "tool_result", tool, result }),
