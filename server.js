@@ -8,6 +8,7 @@ import { mkdir } from "fs/promises";
 import "dotenv/config";
 
 import { runAgentLoop } from "./agent.js";
+import { runOAuthFlow } from "./oauth.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -97,11 +98,18 @@ wss.on("connection", (ws) => {
 });
 
 const PROVIDER = (process.env.PROVIDER || "anthropic").toLowerCase();
+const OPENAI_AUTH = (process.env.OPENAI_AUTH || "apikey").toLowerCase();
 
 await mkdir(PROJECT_DIR, { recursive: true });
 
+if (PROVIDER === "openai" && OPENAI_AUTH === "oauth") {
+  console.log("Starting OpenAI OAuth flow...");
+  await runOAuthFlow();
+  console.log("OpenAI OAuth authentication successful.");
+}
+
 server.listen(PORT, () => {
   console.log(`Agency running at http://localhost:${PORT}`);
-  console.log(`Provider: ${PROVIDER}`);
+  console.log(`Provider: ${PROVIDER}${PROVIDER === "openai" ? ` (auth: ${OPENAI_AUTH})` : ""}`);
   console.log(`Project directory: ${PROJECT_DIR}`);
 });
