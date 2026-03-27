@@ -8,13 +8,36 @@ import { mkdir } from "fs/promises";
 import "dotenv/config";
 
 import { runAgentLoop } from "./agent.js";
-import { runOAuthFlow } from "./oauth.js";
+import { startAuthFlow, isAuthenticated, tryRestoreSession } from "./oauth.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
 const PROJECT_DIR = resolve(process.env.PROJECT_DIR || "./projects");
+const PROVIDER = (process.env.PROVIDER || "openai").toLowerCase();
+const OPENAI_AUTH = (process.env.OPENAI_AUTH || "oauth").toLowerCase();
+const NEEDS_OAUTH = PROVIDER === "openai" && OPENAI_AUTH === "oauth";
 
 const app = express();
+
+// --- OAuth routes (before static middleware) ---
+
+if (NEEDS_OAUTH) {
+  // Start OAuth flow — spin up callback server and redirect to OpenAI
+  app.get("/auth/start", (req, res) => {
+    const url = startAuthFlow(PORT);
+    res.redirect(url);
+  });
+
+  // Gate: serve login page if not authenticated
+  app.get("/", (req, res, next) => {
+    if (!isAuthenticated()) {
+      res.sendFile(join(__dirname, "public", "login.html"));
+      return;
+    }
+    next();
+  });
+}
+
 app.use(express.static(join(__dirname, "public")));
 
 const server = createServer(app);
@@ -97,19 +120,16 @@ wss.on("connection", (ws) => {
   ws.on("close", () => console.log("Client disconnected"));
 });
 
-const PROVIDER = (process.env.PROVIDER || "openai").toLowerCase();
-const OPENAI_AUTH = (process.env.OPENAI_AUTH || "oauth").toLowerCase();
-
 await mkdir(PROJECT_DIR, { recursive: true });
 
-if (PROVIDER === "openai" && OPENAI_AUTH === "oauth") {
-  console.log("Starting OpenAI OAuth flow...");
-  await runOAuthFlow();
-  console.log("OpenAI OAuth authentication successful.");
+if (NEEDS_OAUTH) {
+  await tryRestoreSession();
 }
 
 server.listen(PORT, () => {
   console.log(`Agency running at http://localhost:${PORT}`);
   console.log(`Provider: ${PROVIDER}${PROVIDER === "openai" ? ` (auth: ${OPENAI_AUTH})` : ""}`);
+  if (NEEDS_OAUTH && !isAuthenticated()) console.log("OAuth: waiting for browser login at /");
+  if (NEEDS_OAUTH && isAuthenticated()) console.log("OAuth: session restored");
   console.log(`Project directory: ${PROJECT_DIR}`);
 });

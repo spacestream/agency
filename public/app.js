@@ -7,6 +7,7 @@ const projectNameEl = document.getElementById("project-name");
 const projectStartBtn = document.getElementById("project-start");
 const projectErrorEl = document.getElementById("project-error");
 const chatFooterEl = document.getElementById("chat-footer");
+const newProjectBtn = document.getElementById("new-project-btn");
 
 let ws;
 let inputEnabled = true;
@@ -62,6 +63,7 @@ function handleMessage(msg) {
       projectSet = true;
       projectPromptEl.style.display = "none";
       chatFooterEl.style.display = "";
+      newProjectBtn.style.display = "";
       inputEl.focus();
       if (msg.existing) {
         appendAssistant(`Opened existing project: ${msg.name} — You can ask me to work on the existing files, add features, fix bugs, or continue building.`);
@@ -248,5 +250,22 @@ inputEl.addEventListener("keydown", (e) => {
     sendMessage();
   }
 });
+
+function resetProject() {
+  // Clear chat
+  messagesEl.innerHTML = "";
+  // Reset project state
+  projectSet = false;
+  projectNameEl.value = "";
+  projectNameEl.disabled = false;
+  projectStartBtn.disabled = false;
+  projectErrorEl.textContent = "";
+  // Show project prompt, hide chat footer and button
+  projectPromptEl.style.display = "";
+  chatFooterEl.style.display = "none";
+  newProjectBtn.style.display = "none";
+  // Reconnect to get a fresh server-side session
+  ws.close();
+}
 
 connect();

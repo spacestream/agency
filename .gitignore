@@ -1,6 +1,7 @@
 node_modules/
 projects/
 .env
+.agency/
 CLAUDE.md
 .claude/
 

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGENCY — Authentication</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:           #0a0a0b;
+      --bg-surface:   #141518;
+      --border:       #1e2024;
+      --border-light: #2a2d33;
+      --text:         #c8ccd4;
+      --text-dim:     #6b7080;
+      --text-muted:   #3d4150;
+      --green:        #00ff88;
+      --green-dim:    #00cc6a;
+      --green-bg:     rgba(0, 255, 136, 0.06);
+      --amber:        #ffb800;
+      --mono:         'JetBrains Mono', monospace;
+      --sans:         'DM Sans', sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .dot-grid {
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle, var(--text-muted) 0.5px, transparent 0.5px);
+      background-size: 24px 24px;
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 480px;
+      padding: 0 20px;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+
+    .logo svg {
+      animation: logoPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes logoPulse {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.6; }
+    }
+
+    .logo-text h1 {
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      color: var(--green);
+      line-height: 1;
+    }
+
+    .logo-text span {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.35em;
+      color: var(--text-muted);
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 32px;
+    }
+
+    .card-label {
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .card h2 {
+      font-family: var(--sans);
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+
+    .card p {
+      font-size: 13.5px;
+      color: var(--text-dim);
+      line-height: 1.7;
+      margin-bottom: 8px;
+    }
+
+    .steps {
+      margin: 20px 0 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .step-num {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--green);
+      background: var(--green-bg);
+      border: 1px solid rgba(0, 255, 136, 0.12);
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 2px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .step-text {
+      font-family: var(--sans);
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.6;
+      padding-top: 2px;
+    }
+
+    .step-text strong {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .connect-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 14px 24px;
+      background: transparent;
+      color: var(--green);
+      border: 1px solid var(--green-dim);
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .connect-btn:hover {
+      background: var(--green-bg);
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
+    }
+
+    .connect-btn svg {
+      opacity: 0.8;
+    }
+
+    .connect-btn:hover svg {
+      opacity: 1;
+    }
+
+    .footer-note {
+      margin-top: 20px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    ::selection {
+      background: rgba(0, 255, 136, 0.15);
+      color: var(--green);
+    }
+  </style>
+</head>
+<body>
+  <div class="dot-grid"></div>
+
+  <div class="container">
+    <div class="logo">
+      <svg width="22" height="22" viewBox="0 0 18 18" fill="none">
+        <rect x="1" y="1" width="16" height="16" rx="2" stroke="var(--green)" stroke-width="1.5" fill="none"/>
+        <circle cx="9" cy="9" r="3" fill="var(--green)" opacity="0.6"/>
+        <circle cx="9" cy="9" r="1.5" fill="var(--green)"/>
+      </svg>
+      <div class="logo-text">
+        <h1>AGENCY</h1>
+        <span>MISSION CONTROL</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Authentication</div>
+
+      <h2>Connect your ChatGPT account</h2>
+      <p>Agency uses your ChatGPT subscription to power the coding agent. You'll be redirected to OpenAI to sign in.</p>
+
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">1</span>
+          <span class="step-text"><strong>Sign in</strong> with your ChatGPT account at OpenAI</span>
+        </div>
+        <div class="step">
+          <span class="step-num">2</span>
+          <span class="step-text"><strong>Authorize</strong> Agency to use your subscription</span>
+        </div>
+        <div class="step">
+          <span class="step-num">3</span>
+          <span class="step-text"><strong>Return here</strong> automatically to start building</span>
+        </div>
+      </div>
+
+      <a href="/auth/start" class="connect-btn">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M6 2L12 8L6 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Connect with ChatGPT
+      </a>
+    </div>
+
+    <p class="footer-note">
+      Uses your ChatGPT Plus, Pro, or Team subscription — no API key required.
+    </p>
+  </div>
+</body>
+</html>

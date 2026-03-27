@@ -3,30 +3,72 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agency - Coding Agent</title>
+  <title>AGENCY — Mission Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="dot-grid"></div>
+  <div class="scanline"></div>
+
   <div id="app">
     <header>
-      <h1>Agency</h1>
-      <span id="status" class="status disconnected">Disconnected</span>
+      <div class="header-left">
+        <div class="logo-mark">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <rect x="1" y="1" width="16" height="16" rx="2" stroke="var(--green)" stroke-width="1.5" fill="none"/>
+            <circle cx="9" cy="9" r="3" fill="var(--green)" opacity="0.6"/>
+            <circle cx="9" cy="9" r="1.5" fill="var(--green)"/>
+          </svg>
+        </div>
+        <div class="header-title">
+          <h1>AGENCY</h1>
+          <span class="header-subtitle">MISSION CONTROL</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <button id="new-project-btn" class="header-btn" onclick="resetProject()" style="display:none">NEW PROJECT</button>
+        <div class="telemetry-block">
+          <span class="telemetry-label">SYS</span>
+          <span id="status" class="status disconnected">DISCONNECTED</span>
+        </div>
+      </div>
     </header>
 
     <div id="project-prompt">
-      <label for="project-name">Project folder name (new or existing):</label>
-      <input type="text" id="project-name" placeholder="my-cool-app" autocomplete="off" />
-      <button id="project-start" onclick="setProject()">Open</button>
+      <div class="prompt-chrome">
+        <span class="prompt-label">INITIALIZE PROJECT</span>
+        <span class="prompt-line"></span>
+      </div>
+      <div class="prompt-row">
+        <span class="prompt-caret">&gt;</span>
+        <input type="text" id="project-name" placeholder="project-identifier" autocomplete="off" spellcheck="false" />
+        <button id="project-start" onclick="setProject()">LAUNCH</button>
+      </div>
       <div id="project-error"></div>
     </div>
 
     <main id="messages"></main>
 
     <footer id="chat-footer" style="display:none">
-      <textarea id="input" placeholder="Ask me to build something..." rows="2"></textarea>
-      <button id="send" onclick="sendMessage()">Send</button>
+      <div class="input-chrome">
+        <span class="input-label">OPERATOR INPUT</span>
+        <span class="input-indicator"></span>
+      </div>
+      <div class="input-row">
+        <textarea id="input" placeholder="Issue a directive..." rows="2" spellcheck="false"></textarea>
+        <button id="send" onclick="sendMessage()">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M2 8h12M10 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          TRANSMIT
+        </button>
+      </div>
     </footer>
   </div>
+
   <script src="app.js"></script>
 </body>
 </html>
