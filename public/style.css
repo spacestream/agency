@@ -505,15 +505,15 @@ main::-webkit-scrollbar-thumb {
   min-width: 240px;
   font-size: 12px;
   animation: msgIn 0.2s ease-out;
-  overflow: hidden;
 }
 
 .tool-activity summary {
   padding: 10px 14px;
   cursor: pointer;
-  color: var(--text);
+  color: #e0e4ec;
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
   letter-spacing: 0.02em;
   list-style: none;
   display: flex;
@@ -545,9 +545,9 @@ main::-webkit-scrollbar-thumb {
 
 .tool-activity summary .tool-name {
   color: var(--amber);
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.08em;
 }
 
