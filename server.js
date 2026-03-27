@@ -97,8 +97,8 @@ wss.on("connection", (ws) => {
   ws.on("close", () => console.log("Client disconnected"));
 });
 
-const PROVIDER = (process.env.PROVIDER || "anthropic").toLowerCase();
-const OPENAI_AUTH = (process.env.OPENAI_AUTH || "apikey").toLowerCase();
+const PROVIDER = (process.env.PROVIDER || "openai").toLowerCase();
+const OPENAI_AUTH = (process.env.OPENAI_AUTH || "oauth").toLowerCase();
 
 await mkdir(PROJECT_DIR, { recursive: true });
 

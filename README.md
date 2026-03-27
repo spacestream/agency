@@ -10,31 +10,25 @@ cd agency
 npm install
 ```
 
-Copy the example environment file and add your API key:
+No configuration needed for the default setup — just `npm start`. It will open a browser for ChatGPT sign-in and use your ChatGPT subscription (Plus/Pro/Team) with `gpt-5.2-codex`.
+
+To use a different provider, create a `.env` file:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and set your provider and key:
-
 ```env
-# Use Anthropic (default)
+# Use Anthropic
 PROVIDER=anthropic
 ANTHROPIC_API_KEY=sk-ant-...
 
-# Or use OpenAI with an API key
+# Or use OpenAI with an API key instead of OAuth
 PROVIDER=openai
+OPENAI_AUTH=apikey
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-4o
-
-# Or use OpenAI with ChatGPT subscription (OAuth)
-PROVIDER=openai
-OPENAI_AUTH=oauth
-OPENAI_MODEL=gpt-5.2-codex
 ```
-
-When using `OPENAI_AUTH=oauth`, the server will open a browser for ChatGPT sign-in on startup. This uses your ChatGPT subscription (Plus/Pro/Team) instead of API credits. No API key needed.
 
 ## Run
 

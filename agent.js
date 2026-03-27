@@ -5,14 +5,14 @@ import { getAccessToken, getAccountId } from "./oauth.js";
 
 // --- Provider setup ---
 
-const PROVIDER = (process.env.PROVIDER || "anthropic").toLowerCase();
-const OPENAI_AUTH = (process.env.OPENAI_AUTH || "apikey").toLowerCase();
+const PROVIDER = (process.env.PROVIDER || "openai").toLowerCase();
+const OPENAI_AUTH = (process.env.OPENAI_AUTH || "oauth").toLowerCase();
 
 const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic() : null;
 const openai = process.env.OPENAI_API_KEY ? new OpenAI() : null;
 
 const ANTHROPIC_MODEL = "claude-sonnet-4-20250514";
-const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o";
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5.2-codex";
 const CODEX_BASE_URL = "https://chatgpt.com/backend-api";
 
 function getProvider() {
